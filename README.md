@@ -27,8 +27,14 @@ The API will be available at `http://localhost:5000`
 ### Using Docker
 
 ```bash
-docker run -d -p 5000:5000 ghcr.io/elvismdev/trafilatura-api:latest
+docker run -d -p 5000:5000 -e API_KEY=your-secret-key ghcr.io/elvismdev/trafilatura-api:latest
 ```
+
+## Configuration
+
+| Environment Variable | Description | Default |
+|---------------------|-------------|---------|
+| `API_KEY` | Required for `/extract` endpoint authentication. Set your own secret key for production. | `test123` |
 
 ## API Endpoints
 
@@ -145,6 +151,9 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Set API key (required for /extract endpoint)
+export API_KEY=test123
+
 # Run development server
 python -m flask --app app/app.py run
 
@@ -157,7 +166,9 @@ pytest -v
 ### QNAP Container Station
 
 1. Pull image: `ghcr.io/elvismdev/trafilatura-api:latest`
-2. Create container with port mapping `5000:5000`
+2. Create container with:
+   - Port mapping: `5000:5000`
+   - Environment variable: `API_KEY` = `your-secret-key`
 
 ### GitHub Container Registry
 

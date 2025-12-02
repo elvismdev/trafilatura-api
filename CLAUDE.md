@@ -42,7 +42,7 @@ pylint app
 
 ### Docker
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 ## Architecture
@@ -67,9 +67,10 @@ app/
 - `POST /extract` - Extract content from URL or HTML
   - Requires `X-API-Key` header (validated against `API_KEY` env var)
   - Body: `{ "url": "..." }` or `{ "raw_html": "..." }`
-  - Optional `output_options` for trafilatura params (include_comments, include_tables, output_format, etc.)
+  - Optional `output_options`: `include_tables`, `include_links`, `include_formatting`, `favor_precision`, `favor_recall`
+  - Returns: `title`, `author`, `date`, `description`, `sitename`, `hostname`, `url`, `image`, `categories`, `tags`, `text`, `language`
 
 ## Environment Variables
 
 - `PORT` - Server port (default: 5000)
-- `API_KEY` - Required API key for authentication on `/extract` endpoint
+- `API_KEY` - Required for `/extract` endpoint (default: `test123` via docker-compose)
