@@ -51,7 +51,6 @@ def entry_status():
 
 @common_api.post("/extract")
 def extract():
-    # json api
     """
     extract api by trafilatura
     ---
@@ -80,20 +79,11 @@ def extract():
                         type: object
                         description: options for trafilatura extraction
                         properties:
-                            include_comments:
-                                type: boolean
                             include_tables:
                                 type: boolean
                             include_links:
                                 type: boolean
                             include_formatting:
-                                type: boolean
-                            include_images:
-                                type: boolean
-                            output_format:
-                                type: string
-                                enum: [csv, json, html, markdown, txt, xml, xmltei]
-                            with_metadata:
                                 type: boolean
                             favor_precision:
                                 type: boolean
@@ -106,6 +96,22 @@ def extract():
                 name: ExtractResponse
                 type: object
                 properties:
+                    title:
+                        type: string
+                    author:
+                        type: string
+                    date:
+                        type: string
+                    description:
+                        type: string
+                    sitename:
+                        type: string
+                    image:
+                        type: string
+                    categories:
+                        type: array
+                    tags:
+                        type: array
                     text:
                         type: string
     """
@@ -113,10 +119,51 @@ def extract():
     if not verify_api_key(api_key):
         return jsonify({"error": "Invalid API key"}), 403
 
-    input = request.get_json()
-    html = input.get('raw_html', '') or trafilatura.fetch_url(input['url'], config=_trafilatura_config)
-    output_options = input.get('output_options', {})
-    allowed_params = ['include_comments', 'include_tables', 'include_links', 'include_formatting', 'include_images', 'output_format', 'with_metadata', 'favor_precision', 'favor_recall']
+    input_data = request.get_json()
+    url = input_data.get('url', '')
+    html = input_data.get('raw_html', '') or trafilatura.fetch_url(url, config=_trafilatura_config)
+
+    if not html:
+        return jsonify({"error": "Failed to fetch URL content"}), 400
+
+    output_options = input_data.get('output_options', {})
+
+    # Build extraction parameters
+    allowed_params = ['include_tables', 'include_links', 'include_formatting', 'favor_precision', 'favor_recall']
     extract_params = {param: output_options[param] for param in allowed_params if param in output_options}
-    article = trafilatura.extract(html, **extract_params)
-    return {"output": article}
+
+    # Extract with metadata and images
+    result = trafilatura.bare_extraction(
+        html,
+        url=url,
+        with_metadata=True,
+        include_images=True,
+        **extract_params
+    )
+
+    if not result:
+        return jsonify({"error": "Failed to extract content"}), 400
+
+    # Convert Document to dict
+    data = result.as_dict() if hasattr(result, 'as_dict') else result
+
+    # Build clean response
+    response = {
+        "title": data.get("title"),
+        "author": data.get("author"),
+        "date": data.get("date"),
+        "description": data.get("description"),
+        "sitename": data.get("sitename"),
+        "hostname": data.get("hostname"),
+        "url": data.get("url") or url,
+        "image": data.get("image"),
+        "categories": data.get("categories", []),
+        "tags": data.get("tags", []),
+        "text": data.get("raw_text") or data.get("text"),
+        "language": data.get("language"),
+    }
+
+    # Remove None values for cleaner response
+    response = {k: v for k, v in response.items() if v is not None}
+
+    return jsonify(response)
