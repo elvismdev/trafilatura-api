@@ -1,8 +1,9 @@
-from flask import Blueprint, request, current_app, jsonify
-from copy import deepcopy
-import trafilatura
-from trafilatura.settings import DEFAULT_CONFIG
 import os
+from copy import deepcopy
+
+import trafilatura
+from flask import Blueprint, request, current_app, jsonify
+from trafilatura.settings import DEFAULT_CONFIG
 
 common_api = Blueprint("common_api", __name__)
 
@@ -11,10 +12,12 @@ _trafilatura_config = deepcopy(DEFAULT_CONFIG)
 _trafilatura_config.set(
     'DEFAULT',
     'USER_AGENTS',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0'
 )
 
+
 def verify_api_key(api_key):
+    """Verify the provided API key against the configured API_KEY env var."""
     valid_api_key = os.getenv('API_KEY')
     return api_key == valid_api_key
 
@@ -129,8 +132,15 @@ def extract():
     output_options = input_data.get('output_options', {})
 
     # Build extraction parameters
-    allowed_params = ['include_tables', 'include_links', 'include_formatting', 'favor_precision', 'favor_recall']
-    extract_params = {param: output_options[param] for param in allowed_params if param in output_options}
+    allowed_params = [
+        'include_tables', 'include_links', 'include_formatting',
+        'favor_precision', 'favor_recall'
+    ]
+    extract_params = {
+        param: output_options[param]
+        for param in allowed_params
+        if param in output_options
+    }
 
     # Extract with metadata and images
     result = trafilatura.bare_extraction(
