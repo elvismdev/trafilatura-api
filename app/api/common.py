@@ -1,8 +1,18 @@
 from flask import Blueprint, request, current_app, jsonify
+from copy import deepcopy
 import trafilatura
+from trafilatura.settings import DEFAULT_CONFIG
 import os
 
 common_api = Blueprint("common_api", __name__)
+
+# Configure trafilatura with a browser-like User-Agent to avoid being blocked
+_trafilatura_config = deepcopy(DEFAULT_CONFIG)
+_trafilatura_config.set(
+    'DEFAULT',
+    'USER_AGENTS',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+)
 
 def verify_api_key(api_key):
     valid_api_key = os.getenv('API_KEY')
@@ -104,7 +114,7 @@ def extract():
         return jsonify({"error": "Invalid API key"}), 403
 
     input = request.get_json()
-    html = input.get('raw_html', '') or trafilatura.fetch_url(input['url'])
+    html = input.get('raw_html', '') or trafilatura.fetch_url(input['url'], config=_trafilatura_config)
     output_options = input.get('output_options', {})
     allowed_params = ['include_comments', 'include_tables', 'include_links', 'include_formatting', 'include_images', 'output_format', 'with_metadata', 'favor_precision', 'favor_recall']
     extract_params = {param: output_options[param] for param in allowed_params if param in output_options}
